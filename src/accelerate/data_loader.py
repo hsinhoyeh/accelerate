@@ -38,7 +38,6 @@ from .utils import (
 
 
 logger = get_logger(__name__, log_level="INFO")
-logger.info("accelerate is on")
 
 # kwargs of the DataLoader in min version 1.4.0.
 _PYTORCH_DATALOADER_KWARGS = {
