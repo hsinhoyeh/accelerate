@@ -38,6 +38,8 @@ from .utils import (
 
 
 logger = get_logger(__name__, log_level="INFO")
+formatter = logging.Formatter("[%(levelname)s|%(filename)s:%(lineno)s] %(asctime)s >> %(message)s")
+logger.setFormatter(formatter)
 
 # kwargs of the DataLoader in min version 1.4.0.
 _PYTORCH_DATALOADER_KWARGS = {
@@ -418,8 +420,10 @@ class DataLoaderAdapter:
                 "StatefulDataLoader is not available. Please install torchdata version 0.8.0 or higher to use it."
             )
         if use_stateful_dataloader:
+            logger.info("use statefuldataloader")
             self.base_dataloader = StatefulDataLoader(dataset, batch_sampler=batch_sampler, **kwargs)
         else:
+            logger.info("use DataLoader")
             self.base_dataloader = DataLoader(dataset, batch_sampler=batch_sampler, **kwargs)
 
         if hasattr(self.base_dataloader, "state_dict"):
@@ -551,10 +555,13 @@ class DataLoaderShard(DataLoaderAdapter, DataLoaderStateMixin):
         self.begin()
 
         self.set_epoch(self.iteration)
+        logger.info("DataLoaderShard.dataloader_iter is called")
         dataloader_iter = self.base_dataloader.__iter__()
         # We iterate one batch ahead to check when we are at the end
         try:
+            logger.info("DataLoaderShard.current_batch is called")
             current_batch = next(dataloader_iter)
+            logger.info("DataLoaderShard.current_batch is leaved")
         except StopIteration:
             yield
 
@@ -568,7 +575,9 @@ class DataLoaderShard(DataLoaderAdapter, DataLoaderStateMixin):
                     current_batch = send_to_device(current_batch, self.device, non_blocking=self._non_blocking)
                 logger.info("DataLoaderShard.__iter__.sendtodevice is leaved")
                 self._update_state_dict()
+                logger.info("DataLoaderShard.__iter__.update_state_dict is leaved")
                 next_batch = next(dataloader_iter)
+                logger.info("DataLoaderShard.__iter__.next_batch is leaved")
                 if batch_index >= self.skip_batches:
                     logger.info("DataLoaderShard.__iter__.yield current batch")
                     yield current_batch
@@ -725,6 +734,7 @@ class DataLoaderDispatcher(DataLoaderAdapter, DataLoaderStateMixin):
         slice_fn=None,
         **kwargs,
     ):
+        logger.info("dataloaderdispatch is called")
         shuffle = False
         if is_torch_version(">=", "1.11.0"):
             from torch.utils.data.datapipes.iter.combinatorics import ShufflerIterDataPipe
@@ -747,6 +757,7 @@ class DataLoaderDispatcher(DataLoaderAdapter, DataLoaderStateMixin):
         self.iteration = 0
 
     def _fetch_batches(self, iterator):
+        logger.info("dataloaderdispatch._fetch_batches is called")
         batches, batch = None, None
         # On process 0, we gather the batch to dispatch.
         if self.state.process_index == 0:
@@ -794,6 +805,7 @@ class DataLoaderDispatcher(DataLoaderAdapter, DataLoaderStateMixin):
         return batch, batch_info
 
     def __iter__(self):
+        logger.info("dataloaderdispatch.__iter__ is called")
         self.begin()
         self.set_epoch(self.iteration)
         main_iterator = None
@@ -807,7 +819,9 @@ class DataLoaderDispatcher(DataLoaderAdapter, DataLoaderStateMixin):
         stop_iteration = False
         self._stop_iteration = False
         first_batch = None
+        logger.info("dataloaderdispatch._fetch_batches is called")
         next_batch, next_batch_info = self._fetch_batches(main_iterator)
+        logger.info("dataloaderdispatch._fetch_batches is leave")
         batch_index = 0
         while not stop_iteration:
             batch, batch_info = next_batch, next_batch_info
