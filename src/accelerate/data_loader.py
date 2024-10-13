@@ -298,6 +298,7 @@ class IterableDatasetShard(IterableDataset):
         process_index: int = 0,
         split_batches: bool = False,
     ):
+        logger.info(f"IterableDatasetShard.__init__ is called")
         if split_batches and batch_size > 1 and batch_size % num_processes != 0:
             raise ValueError(
                 f"To use `IterableDatasetShard` in `split_batches` mode, the batch size ({batch_size}) "
@@ -311,11 +312,13 @@ class IterableDatasetShard(IterableDataset):
         self.split_batches = split_batches
 
     def set_epoch(self, epoch):
+        logger.info(f"IterableDatasetShard.set_epoch is called")
         self.epoch = epoch
         if hasattr(self.dataset, "set_epoch"):
             self.dataset.set_epoch(epoch)
 
     def __len__(self):
+        logger.info(f"IterableDatasetShard.__len__ is called")
         # We will just raise the downstream error if the underlying dataset is not sized
         if self.drop_last:
             return (len(self.dataset) // (self.batch_size * self.num_processes)) * self.batch_size
@@ -323,6 +326,7 @@ class IterableDatasetShard(IterableDataset):
             return math.ceil(len(self.dataset) / (self.batch_size * self.num_processes)) * self.batch_size
 
     def __iter__(self):
+        logger.info(f"IterableDatasetShard.__iter__ is called")
         if (
             not hasattr(self.dataset, "set_epoch")
             and hasattr(self.dataset, "generator")
@@ -541,6 +545,7 @@ class DataLoaderShard(DataLoaderAdapter, DataLoaderStateMixin):
         self.iteration = 0
 
     def __iter__(self):
+        logger.info("DataLoaderShard.__iter__ is called")
         if self.rng_types is not None:
             synchronize_rng_states(self.rng_types, self.synchronized_generator)
         self.begin()
@@ -554,17 +559,22 @@ class DataLoaderShard(DataLoaderAdapter, DataLoaderStateMixin):
             yield
 
         batch_index = 0
+        logger.info("__iter__ while loop ")
         while True:
             try:
                 # But we still move it to the device so it is done before `StopIteration` is reached
+                logger.info("DataLoaderShard.__iter__.sendtodevice is called")
                 if self.device is not None:
                     current_batch = send_to_device(current_batch, self.device, non_blocking=self._non_blocking)
+                logger.info("DataLoaderShard.__iter__.sendtodevice is leaved")
                 self._update_state_dict()
                 next_batch = next(dataloader_iter)
                 if batch_index >= self.skip_batches:
+                    logger.info("DataLoaderShard.__iter__.yield current batch")
                     yield current_batch
                 batch_index += 1
                 current_batch = next_batch
+                logger.info("DataLoaderShard.__iter__.yield incr next batch")
             except StopIteration:
                 self.end_of_dataloader = True
                 self._update_state_dict()
