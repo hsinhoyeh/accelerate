@@ -38,8 +38,6 @@ from .utils import (
 
 
 logger = get_logger(__name__, log_level="INFO")
-formatter = logging.Formatter("[%(levelname)s|%(filename)s:%(lineno)s] %(asctime)s >> %(message)s")
-logger.setFormatter(formatter)
 
 # kwargs of the DataLoader in min version 1.4.0.
 _PYTORCH_DATALOADER_KWARGS = {

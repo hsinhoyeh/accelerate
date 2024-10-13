@@ -119,6 +119,9 @@ def get_logger(name: str, log_level: str = None):
     if log_level is None:
         log_level = os.environ.get("ACCELERATE_LOG_LEVEL", None)
     logger = logging.getLogger(name)
+    for handler in logger.handlers:
+        formatter = logging.Formatter("[%(levelname)s|%(filename)s:%(lineno)s] %(asctime)s >> %(message)s")
+        handler.setFormatter(formatter)
     if log_level is not None:
         logger.setLevel(log_level.upper())
         logger.root.setLevel(log_level.upper())
