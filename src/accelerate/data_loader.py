@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import math
+import time
 from contextlib import suppress
 from typing import Callable, List, Optional, Union
 
@@ -568,20 +569,20 @@ class DataLoaderShard(DataLoaderAdapter, DataLoaderStateMixin):
         while True:
             try:
                 # But we still move it to the device so it is done before `StopIteration` is reached
-                logger.info("DataLoaderShard.__iter__.sendtodevice is called")
+                logger.info(f"DataLoaderShard.__iter__.sendtodevice is called {time.time()}")
                 if self.device is not None:
                     current_batch = send_to_device(current_batch, self.device, non_blocking=self._non_blocking)
-                logger.info("DataLoaderShard.__iter__.sendtodevice is leaved")
+                logger.info(f"DataLoaderShard.__iter__.sendtodevice is leaved {time.time()}")
                 self._update_state_dict()
-                logger.info("DataLoaderShard.__iter__.update_state_dict is leaved")
+                logger.info(f"DataLoaderShard.__iter__.update_state_dict is leaved {time.time()}")
                 next_batch = next(dataloader_iter)
-                logger.info("DataLoaderShard.__iter__.next_batch is leaved")
+                logger.info(f"DataLoaderShard.__iter__.next_batch is leaved {time.time()}")
                 if batch_index >= self.skip_batches:
-                    logger.info("DataLoaderShard.__iter__.yield current batch")
+                    logger.info(f"DataLoaderShard.__iter__.yield current batch {time.time()}")
                     yield current_batch
                 batch_index += 1
                 current_batch = next_batch
-                logger.info("DataLoaderShard.__iter__.yield incr next batch")
+                logger.info(f"DataLoaderShard.__iter__.yield incr next batch {time.time()}")
             except StopIteration:
                 self.end_of_dataloader = True
                 self._update_state_dict()
