@@ -52,7 +52,7 @@ class MultiProcessAdapter(logging.LoggerAdapter):
             raise RuntimeError(
                 "You must initialize the accelerate state by calling either `PartialState()` or `Accelerator()` before using the logging utility."
             )
-        main_process_only = kwargs.pop("main_process_only", True)
+        main_process_only = kwargs.pop("main_process_only", False)
         in_order = kwargs.pop("in_order", False)
         # set `stacklevel` to exclude ourself in `Logger.findCaller()` while respecting user's choice
         kwargs.setdefault("stacklevel", 2)
